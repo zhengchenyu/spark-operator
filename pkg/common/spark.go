@@ -49,6 +49,18 @@ const (
 	SparkUIProxyBase = "spark.ui.proxyBase"
 
 	SparkUIProxyRedirectURI = "spark.ui.proxyRedirectUri"
+
+	// SparkKubernetesDriverUIServiceEnabled, when set to "true", tells Spark to create its own
+	// dedicated Kubernetes Service for the driver Web UI and to runtime-patch the Service's
+	// targetPort to the actual bound UI port. When Spark creates the service, the operator
+	// skips its own UI Service creation to avoid duplication. See:
+	// https://issues.apache.org/jira/browse/SPARK-49407
+	SparkKubernetesDriverUIServiceEnabled = "spark.kubernetes.driver.ui.service.enabled"
+
+	// SparkKubernetesDriverUIServiceName explicitly sets the name of the Spark-created UI
+	// Service. Set by the operator to match its Ingress backend naming
+	// (util.GetDefaultUIServiceName) so Spark and the operator agree on one name.
+	SparkKubernetesDriverUIServiceName = "spark.kubernetes.driver.ui.service.name"
 )
 
 // Spark core properties.

@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kubeflow/spark-operator/v2/api/v1beta2"
 	"github.com/kubeflow/spark-operator/v2/pkg/common"
@@ -47,7 +49,26 @@ func (r *Reconciler) configWebUI(_ context.Context, app *v1beta2.SparkApplicatio
 	}
 	util.SetIfNotExists(app.Spec.SparkConf, common.SparkUIProxyBase, ingressURL.Path)
 	util.SetIfNotExists(app.Spec.SparkConf, common.SparkUIProxyRedirectURI, "/")
+
+	// If the user opted into Spark-side UI Service creation (via
+	// `spark.kubernetes.driver.ui.service.enabled=true`), tell Spark which service name to use
+	// so the operator's Ingress backend and the Spark-created Service line up.
+	if isSparkSideUIServiceEnabled(app) {
+		util.SetIfNotExists(app.Spec.SparkConf,
+			common.SparkKubernetesDriverUIServiceName, util.GetDefaultUIServiceName(app))
+	}
 	return nil
+}
+
+// isSparkSideUIServiceEnabled reports whether the SparkApplication opts into
+// spark-created UI Service (spark.kubernetes.driver.ui.service.enabled=true in sparkConf).
+// When true, the operator skips its own UI Service creation to avoid duplication.
+func isSparkSideUIServiceEnabled(app *v1beta2.SparkApplication) bool {
+	if app.Spec.SparkConf == nil {
+		return false
+	}
+	v, ok := app.Spec.SparkConf[common.SparkKubernetesDriverUIServiceEnabled]
+	return ok && strings.EqualFold(v, "true")
 }
 
 func (r *Reconciler) createWebUIService(ctx context.Context, app *v1beta2.SparkApplication) (*SparkService, error) {
@@ -66,6 +87,23 @@ func (r *Reconciler) createWebUIService(ctx context.Context, app *v1beta2.SparkA
 	serviceType := util.GetWebUIServiceType(app)
 	serviceLabels := util.GetWebUIServiceLabels(app)
 	serviceAnnotations := util.GetWebUIServiceAnnotations(app)
+
+	// If the user opted into Spark-side UI Service creation, Spark itself will create the
+	// <app>-ui-svc (with the same name; see configWebUI) and runtime-patch its targetPort
+	// once the driver's Jetty server binds. The operator only needs to return a SparkService
+	// descriptor so the subsequent Ingress creation references the right backend by name.
+	// See docs/06.spark-ui-production-access.md and SPARK-49407.
+	if isSparkSideUIServiceEnabled(app) {
+		return &SparkService{
+			serviceName:        serviceName,
+			serviceType:        serviceType,
+			servicePort:        port,
+			servicePortName:    portName,
+			targetPort:         intstr.FromInt(int(targetPort)),
+			serviceAnnotations: serviceAnnotations,
+			serviceLabels:      serviceLabels,
+		}, nil
+	}
 
 	return r.createDriverIngressService(ctx, app, portName, port, targetPort, serviceName, serviceType, serviceAnnotations, serviceLabels)
 }
