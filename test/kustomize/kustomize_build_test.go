@@ -140,7 +140,7 @@ func TestKustomizeBuild(t *testing.T) {
 	t.Run("ResourceInventory", func(t *testing.T) {
 		expected := map[string]int{
 			"Namespace":                      1,
-			"CustomResourceDefinition":       3,
+			"CustomResourceDefinition":       4,
 			"ServiceAccount":                 2,
 			"ClusterRole":                    6,
 			"ClusterRoleBinding":             2,

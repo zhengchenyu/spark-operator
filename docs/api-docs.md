@@ -1,12 +1,204 @@
 <p>Packages:</p>
 <ul>
 <li>
+<a href="#spark.apache.org%2fv1alpha1">spark.apache.org/v1alpha1</a>
+</li>
+<li>
 <a href="#sparkoperator.k8s.io%2fv1alpha1">sparkoperator.k8s.io/v1alpha1</a>
 </li>
 <li>
 <a href="#sparkoperator.k8s.io%2fv1beta2">sparkoperator.k8s.io/v1beta2</a>
 </li>
 </ul>
+<h2 id="spark.apache.org/v1alpha1">spark.apache.org/v1alpha1</h2>
+<div>
+<p>Package v1alpha1 contains the ExecutorScaling API definitions.</p>
+<p>ExecutorScaling uses the spark.apache.org/v1alpha1 API. This is an alpha
+API and may change in a future release.</p>
+</div>
+Resource Types:
+<ul><li>
+<a href="#spark.apache.org/v1alpha1.ExecutorScaling">ExecutorScaling</a>
+</li></ul>
+<h3 id="spark.apache.org/v1alpha1.ExecutorScaling">ExecutorScaling
+</h3>
+<div>
+<p>ExecutorScaling is the scaling request written by a Spark driver.</p>
+<p>The driver writes spec.target and reads status.admitted. An admission
+controller may use spec.target to request resources from a scheduling
+backend and write the admitted executor count back to status.admitted.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+string</td>
+<td>
+<code>
+spark.apache.org/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code><br/>
+string
+</td>
+<td><code>ExecutorScaling</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#spark.apache.org/v1alpha1.ExecutorScalingSpec">
+ExecutorScalingSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>target</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Target is the number of executors currently requested by the Spark
+driver.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>admissionMode</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>AdmissionMode controls whether an external admission controller owns
+status.admitted. In default mode Spark performs loopback admission. In
+injection mode an external controller, such as Kueue, supplies the
+admitted count.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#spark.apache.org/v1alpha1.ExecutorScalingStatus">
+ExecutorScalingStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="spark.apache.org/v1alpha1.ExecutorScalingSpec">ExecutorScalingSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#spark.apache.org/v1alpha1.ExecutorScaling">ExecutorScaling</a>)
+</p>
+<div>
+<p>ExecutorScalingSpec defines the desired executor allocation.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>target</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Target is the number of executors currently requested by the Spark
+driver.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>admissionMode</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>AdmissionMode controls whether an external admission controller owns
+status.admitted. In default mode Spark performs loopback admission. In
+injection mode an external controller, such as Kueue, supplies the
+admitted count.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="spark.apache.org/v1alpha1.ExecutorScalingStatus">ExecutorScalingStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#spark.apache.org/v1alpha1.ExecutorScaling">ExecutorScaling</a>)
+</p>
+<div>
+<p>ExecutorScalingStatus defines the observed admission result.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>admitted</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Admitted is the number of executors that the admission controller
+currently allows the Spark driver to create.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<hr/>
 <h2 id="sparkoperator.k8s.io/v1alpha1">sparkoperator.k8s.io/v1alpha1</h2>
 <div>
 <p>Package v1alpha1 is the v1alpha1 version of the API.</p>

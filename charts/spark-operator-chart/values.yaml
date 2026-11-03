@@ -126,6 +126,11 @@ controller:
   # -- Specifies the maximum number of Executor pods that can be tracked by the controller per SparkApplication.
   maxTrackedExecutorPerApp: 1000
 
+  executorScaling:
+    # -- Admission backend for Spark ExecutorScaling resources.
+    # Supported values are `noop` and `kueue-workload-slices`.
+    admissionBackend: noop
+
   # -- Default Time-To-Live (in seconds) applied to terminated SparkApplications that do not
   # set spec.timeToLiveSeconds. Requires the DefaultTimeToLive feature gate to be enabled.
   # 0 (default) disables it.

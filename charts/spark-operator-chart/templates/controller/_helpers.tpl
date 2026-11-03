@@ -171,6 +171,50 @@ Create the role policy rules for the controller in every Spark job namespace
   - create
   - delete
 - apiGroups:
+  - spark.apache.org
+  resources:
+  - executorscalings
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - spark.apache.org
+  resources:
+  - executorscalings/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - spark.apache.org
+  resources:
+  - executorscalings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kueue.x-k8s.io
+  resources:
+  - workloads
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kueue.x-k8s.io
+  resources:
+  - workloads/finalizers
+  - workloads/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - sparkoperator.k8s.io
   resources:
   - scheduledsparkapplications

@@ -134,6 +134,7 @@ spec:
         {{- if .Values.controller.maxTrackedExecutorPerApp }}
         - --max-tracked-executor-per-app={{ .Values.controller.maxTrackedExecutorPerApp }}
         {{- end }}
+        - --executor-scaling-admission-backend={{ .Values.controller.executorScaling.admissionBackend }}
         {{- if and (include "spark-operator.defaultTimeToLive.enabled" .) (ge (int .Values.controller.defaultTimeToLiveSeconds) 0) }}
         - --default-time-to-live-seconds={{ .Values.controller.defaultTimeToLiveSeconds }}
         {{- end }}

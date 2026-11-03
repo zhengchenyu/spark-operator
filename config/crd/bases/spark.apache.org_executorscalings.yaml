@@ -1,0 +1,100 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: executorscalings.spark.apache.org
+spec:
+  group: spark.apache.org
+  names:
+    kind: ExecutorScaling
+    listKind: ExecutorScalingList
+    plural: executorscalings
+    shortNames:
+    - escaling
+    singular: executorscaling
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.target
+      name: Target
+      type: integer
+    - jsonPath: .status.admitted
+      name: Admitted
+      type: integer
+    - jsonPath: .spec.admissionMode
+      name: AdmissionMode
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          ExecutorScaling is the scaling request written by a Spark driver.
+
+          The driver writes spec.target and reads status.admitted. An admission
+          controller may use spec.target to request resources from a scheduling
+          backend and write the admitted executor count back to status.admitted.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ExecutorScalingSpec defines the desired executor allocation.
+            properties:
+              admissionMode:
+                description: |-
+                  AdmissionMode controls whether an external admission controller owns
+                  status.admitted. In default mode Spark performs loopback admission. In
+                  injection mode an external controller, such as Kueue, supplies the
+                  admitted count.
+                enum:
+                - default
+                - injection
+                type: string
+              target:
+                description: |-
+                  Target is the number of executors currently requested by the Spark
+                  driver.
+                format: int32
+                minimum: 0
+                type: integer
+            required:
+            - admissionMode
+            - target
+            type: object
+          status:
+            description: ExecutorScalingStatus defines the observed admission result.
+            properties:
+              admitted:
+                description: |-
+                  Admitted is the number of executors that the admission controller
+                  currently allows the Spark driver to create.
+                format: int32
+                type: integer
+            type: object
+        required:
+        - metadata
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -59,8 +59,11 @@ import (
 
 	operatortls "github.com/kubeflow/spark-operator/v2/pkg/tls"
 
+	executorscalingv1alpha1 "github.com/kubeflow/spark-operator/v2/api/executorscalingv1alpha1"
 	"github.com/kubeflow/spark-operator/v2/api/v1alpha1"
 	"github.com/kubeflow/spark-operator/v2/api/v1beta2"
+	"github.com/kubeflow/spark-operator/v2/internal/controller/executorscaling"
+	executorscalingkueue "github.com/kubeflow/spark-operator/v2/internal/controller/executorscaling/kueue"
 	"github.com/kubeflow/spark-operator/v2/internal/controller/scheduledsparkapplication"
 	"github.com/kubeflow/spark-operator/v2/internal/controller/sparkapplication"
 	"github.com/kubeflow/spark-operator/v2/internal/controller/sparkconnect"
@@ -80,6 +83,11 @@ var (
 	logger = ctrl.Log.WithName("")
 )
 
+const (
+	executorScalingBackendNoop                = "noop"
+	executorScalingBackendKueueWorkloadSlices = "kueue-workload-slices"
+)
+
 var (
 	namespaces        []string
 	namespaceSelector string
@@ -89,6 +97,7 @@ var (
 	cacheSyncTimeout         time.Duration
 	maxTrackedExecutorPerApp int
 	defaultTimeToLiveSeconds int64
+	executorScalingBackend   string
 
 	// Driver PDB feature gate. When enabled, the controller creates a
 	// PodDisruptionBudget for each SparkApplication that sets
@@ -212,6 +221,18 @@ func NewStartCommand() *cobra.Command {
 				}
 			}
 
+			validExecutorScalingBackends := []string{
+				executorScalingBackendNoop,
+				executorScalingBackendKueueWorkloadSlices,
+			}
+			if !slices.Contains(validExecutorScalingBackends, executorScalingBackend) {
+				return fmt.Errorf(
+					"invalid value %q for --executor-scaling-admission-backend, valid values: %v",
+					executorScalingBackend,
+					validExecutorScalingBackends,
+				)
+			}
+
 			return nil
 		},
 		Run: func(_ *cobra.Command, args []string) {
@@ -229,6 +250,12 @@ func NewStartCommand() *cobra.Command {
 		"Default Time-To-Live in seconds applied to terminated SparkApplications that do "+
 			"not set spec.timeToLiveSeconds. Requires the DefaultTimeToLive feature gate. "+
 			"0 (default) disables it; a negative value is rejected.")
+	command.Flags().StringVar(
+		&executorScalingBackend,
+		"executor-scaling-admission-backend",
+		executorScalingBackendNoop,
+		"Admission backend for injection-mode ExecutorScaling resources. Valid values: noop, kueue-workload-slices.",
+	)
 	command.Flags().StringVar(&defaultServiceAccount, "default-service-account", "",
 		"The service account used by the Spark driver pod and the Spark Connect server pod "+
 			"when neither the custom resource nor its pod template specifies one. Leave empty "+
@@ -437,6 +464,25 @@ func start() {
 		os.Exit(1)
 	}
 
+	var executorScalingAdmissionBackend executorscaling.AdmissionBackend = executorscaling.NoopBackend{}
+	if executorScalingBackend == executorScalingBackendKueueWorkloadSlices {
+		executorScalingAdmissionBackend = executorscalingkueue.NewWorkloadSliceBackend(mgr.GetClient())
+	}
+
+	// Setup controller for Spark ExecutorScaling requests.
+	if err = executorscaling.NewReconciler(
+		mgr.GetScheme(),
+		mgr.GetClient(),
+		executorScalingAdmissionBackend,
+		executorscaling.Options{
+			Namespaces:        namespaces,
+			NamespaceSelector: namespaceSelector,
+		},
+	).SetupWithManager(mgr, newControllerOptions()); err != nil {
+		logger.Error(err, "Failed to create controller", "controller", "ExecutorScaling")
+		os.Exit(1)
+	}
+
 	// Setup controller for ScheduledSparkApplication.
 	if err = scheduledsparkapplication.NewReconciler(
 		mgr.GetScheme(),
@@ -533,15 +579,19 @@ func newCacheOptions() cache.Options {
 					common.LabelCreatedBySparkOperator: "true",
 				}),
 			},
-			&v1beta2.SparkApplication{}:          {},
-			&v1beta2.ScheduledSparkApplication{}: {},
-			&v1alpha1.SparkConnect{}:             {},
+			&v1beta2.SparkApplication{}:                {},
+			&v1beta2.ScheduledSparkApplication{}:       {},
+			&v1alpha1.SparkConnect{}:                   {},
+			&executorscalingv1alpha1.ExecutorScaling{}: {},
 			&policyv1.PodDisruptionBudget{}: {
 				Label: labels.SelectorFromSet(labels.Set{
 					common.LabelLaunchedBySparkOperator: "true",
 				}),
 			},
 		},
+	}
+	if executorScalingBackend == executorScalingBackendKueueWorkloadSlices {
+		options.ByObject[executorscalingkueue.WorkloadObject()] = cache.ByObject{}
 	}
 
 	return options

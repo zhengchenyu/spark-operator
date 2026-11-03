@@ -23,6 +23,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	schedulingv1alpha1 "sigs.k8s.io/scheduler-plugins/apis/scheduling/v1alpha1"
 
+	executorscalingv1alpha1 "github.com/kubeflow/spark-operator/v2/api/executorscalingv1alpha1"
 	"github.com/kubeflow/spark-operator/v2/api/v1alpha1"
 	"github.com/kubeflow/spark-operator/v2/api/v1beta2"
 )
@@ -35,12 +36,14 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(ControllerScheme))
 	utilruntime.Must(schedulingv1alpha1.AddToScheme(ControllerScheme))
 
+	utilruntime.Must(executorscalingv1alpha1.AddToScheme(ControllerScheme))
 	utilruntime.Must(v1alpha1.AddToScheme(ControllerScheme))
 	utilruntime.Must(v1beta2.AddToScheme(ControllerScheme))
 	// +kubebuilder:scaffold:scheme
 
 	utilruntime.Must(clientgoscheme.AddToScheme(WebhookScheme))
 
+	utilruntime.Must(executorscalingv1alpha1.AddToScheme(WebhookScheme))
 	utilruntime.Must(v1alpha1.AddToScheme(WebhookScheme))
 	utilruntime.Must(v1beta2.AddToScheme(WebhookScheme))
 	// +kubebuilder:scaffold:scheme
